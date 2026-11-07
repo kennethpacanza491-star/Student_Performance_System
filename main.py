@@ -78,10 +78,12 @@ def calculate_average(student):
 def search_student(name):
 
     cursor.execute("""
-    SELECT * FROM students
-    WHERE LOWER(name) = LOWER(%s)
-    """, (name,))
-
+        SELECT student_id, name, email,
+           preliminary_grade, midterm_grade, final_grade
+        FROM students
+        WHERE LOWER(name) = LOWER(%s)
+        """, (name,))
+        
     return cursor.fetchone()
 
 
@@ -370,7 +372,6 @@ while True:
             status = calculate_status(average)
 
             print(
-                f"{student['student_id']:<6}"
                 f"{student['name']:<25}"
                 f"{average:<15.2f}"
                 f"{status:<20}"
@@ -440,7 +441,11 @@ while True:
     # ======================================
 
     elif select == "4":
-
+        cursor.execute("SELECT * FROM students")
+        records = cursor.fetchall()
+        if not records:
+            print("\nNOTE: NO STUDENT DATA TO SEARCH YET.\n")
+            continue
         attempts = 0
 
         while attempts < 3:
@@ -466,6 +471,11 @@ while True:
     # ======================================
 
     elif select == "5":
+        cursor.execute("SELECT * FROM students")
+        records = cursor.fetchall()
+        if not records:
+            print("\nNOTE: NO STUDENT DATA TO EDIT YET.\n")
+            continue
 
         attempts = 0
         found_student = None
@@ -503,7 +513,7 @@ while True:
 
             if choice == "1":
 
-                new_name = get_name(found_student["student_id"])
+                new_name = get_name(found_student['student_id'])
 
                 if new_name is not None:
 
@@ -513,7 +523,7 @@ while True:
                     WHERE student_id = %s
                     """, (
                         new_name,
-                        found_student["student_id"]
+                        found_student['student_id']
                     ))
 
                     db.commit()
@@ -583,6 +593,11 @@ while True:
     # ======================================
 
     elif select == "6":
+        cursor.execute("SELECT * FROM students")
+        records = cursor.fetchall()
+        if not records:
+            print("\nNOTE: NO STUDENT DATA TO DELETE YET.\n")
+            continue
 
         attempts = 0
         found_student = None
