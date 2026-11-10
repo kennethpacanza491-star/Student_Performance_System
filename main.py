@@ -1,6 +1,7 @@
-
 import mysql.connector
 import re
+from authentication import authenticate
+
 
 # ==========================================
 # DATABASE CONNECTION
@@ -18,6 +19,19 @@ try:
     cursor = db.cursor(dictionary=True)
 
     print("\nDATABASE CONNECTED SUCCESSFULLY. ✅")
+
+    # ==========================================
+    # SYSTEM AUTHENTICATION
+    # ==========================================
+
+    if not authenticate(db, cursor):
+
+        cursor.close()
+        db.close()
+
+        print("\nDATABASE CONNECTION CLOSED.")
+
+        raise SystemExit
 
 except mysql.connector.Error as error:
     print("\nDATABASE CONNECTION ERROR:", error)
@@ -83,7 +97,7 @@ def search_student(name):
         FROM students
         WHERE LOWER(name) = LOWER(%s)
         """, (name,))
-        
+
     return cursor.fetchone()
 
 
@@ -91,7 +105,7 @@ def search_student(name):
 # NAME VALIDATION
 # ==========================================
 
-def get_name():
+def get_name(student_id=None):
 
     attempts = 0
 
@@ -109,10 +123,16 @@ def get_name():
             print("\nNOTE: Each word must start with a capital letter.\n")
 
         else:
-            cursor.execute("""
-            SELECT student_id FROM students
-            WHERE LOWER(name) = LOWER(%s)
-            """, (name,))
+            if student_id is not None:
+                cursor.execute("""
+                SELECT student_id FROM students
+                WHERE LOWER(name) = LOWER(%s) AND student_id != %s
+                """, (name, student_id))
+            else:
+                cursor.execute("""
+                SELECT student_id FROM students
+                WHERE LOWER(name) = LOWER(%s)
+                """, (name,))
 
             if cursor.fetchone():
                 print("\nNOTE: This name is already in use.\n")
@@ -372,6 +392,7 @@ while True:
             status = calculate_status(average)
 
             print(
+                f"{student['student_id']:<6}"
                 f"{student['name']:<25}"
                 f"{average:<15.2f}"
                 f"{status:<20}"
@@ -564,9 +585,6 @@ while True:
                 new_grade = get_grade(label)
 
                 if new_grade is not None:
-
-                    # Column names are selected from the
-                    # fixed choices above, not user input.
 
                     cursor.execute(
                         f"UPDATE students SET {column} = %s "
